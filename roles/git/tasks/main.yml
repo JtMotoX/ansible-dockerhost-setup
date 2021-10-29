@@ -3,3 +3,12 @@
     package:
       name: git
       state: present
+
+  - name: Set git configs
+    git_config:
+      name: "{{ item.name }}"
+      value: "{{ item.value }}"
+      scope: "{{ item.scope }}"
+    with_items:
+      - { scope: global, name: user.name, value: "{{ git_config.user_name }}" }
+      - { scope: global, name: user.email, value: "{{ git_config.user_email }}" }

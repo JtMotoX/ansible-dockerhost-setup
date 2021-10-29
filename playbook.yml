@@ -3,6 +3,10 @@
     gather_facts: true
     hosts: all
     become: yes
+    vars:
+      git_config:
+        user_name: JtMotoX
+        user_email: 7191259+JtMotoX@users.noreply.github.com
     pre_tasks:
       - name: Update Apt cache before running playbook
         apt:
