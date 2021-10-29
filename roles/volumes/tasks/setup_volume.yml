@@ -1,0 +1,53 @@
+---
+  - debug:
+      var: volume
+
+  - name: Get the partition format
+    shell: "blkid /dev/{{ volume.partition }} | perl -p -e 's/{{ regexp }}/{{ replace }}/'"
+    vars:
+      regexp: '.*TYPE="(\w+).*'
+      replace: '\1'
+    register: partition_format
+    changed_when: false
+
+  - debug:
+      var: partition_format.stdout
+
+  - name: Make sure that the partition was found
+    fail:
+      msg: "The partition {{ volume.partition }} was not found"
+    when: partition_format.stdout == ''
+
+  - name: Create the partition mnt directory if it does not exist
+    file:
+      path: "/mnt/{{ volume.partition }}"
+      state: directory
+
+  - name: Generate the fstab record for the partition
+    set_fact:
+      partition_fstab: "/dev/{{ volume.partition }}\t/mnt/{{ volume.partition }}\t{{ partition_format.stdout }}\tdefaults\t0\t1"
+
+  - name: Set the fstab record for the partition
+    lineinfile:
+      path: /etc/fstab
+      regexp: '^/dev/{{ volume.partition }}\s'
+      line: "{{ partition_fstab }}"
+
+  - name: Create the bind directory if it does not exist
+    file:
+      path: "{{ volume.dest }}"
+      state: directory
+
+  - name: Generate the fstab record for the mount
+    set_fact:
+      mount_fstab: "/mnt/{{ volume.partition }}{{ volume.src }}\t{{ volume.dest }}\tnone\tbind\t0\t0"
+
+  - name: Set the fstab record for the mount
+    lineinfile:
+      path: /etc/fstab
+      regexp: '^/mnt/{{ volume.partition }}{{ volume.src }}\s'
+      line: "{{ mount_fstab }}"
+
+  - name: Mount the volumes
+    shell: mount -a
+    changed_when: false

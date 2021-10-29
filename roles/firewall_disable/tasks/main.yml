@@ -1,0 +1,10 @@
+---
+  - name: Disable ufw service autostart
+    systemd:
+      name: ufw
+      enabled: no
+
+  - name: Stop ufw service
+    systemd:
+      name: ufw
+      state: stopped

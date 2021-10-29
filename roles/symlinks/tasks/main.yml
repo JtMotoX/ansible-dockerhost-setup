@@ -1,0 +1,9 @@
+---
+  - set_fact:
+      restart_all_services: false
+
+  - name: Loop over each symlink
+    include: create_symlink.yml
+    with_items: "{{ symlink_list }}"
+    loop_control:
+      loop_var: symlink

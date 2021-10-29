@@ -1,0 +1,14 @@
+---
+  - name: Trim all supported mounted filesystems from /etc/fstab
+    shell: fstrim --fstab --verbose
+    changed_when: false
+
+  - name: Enable Trim service autostart
+    systemd:
+      name: fstrim.timer
+      enabled: yes
+
+  - name: Start Trim service
+    systemd:
+      name: fstrim.timer
+      state: started

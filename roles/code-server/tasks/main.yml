@@ -1,0 +1,55 @@
+---
+  - name: Set which user code-server should run under
+    set_fact:
+      # code_server_user: "{{ ansible_user }}"
+      code_server_user: "root"
+
+  - name: Install code-server
+    shell: curl -fsSL https://code-server.dev/install.sh | sh
+    changed_when: false
+    args:
+      warn: false
+
+  - name: Get code-server services
+    shell: LC_CTYPE=C systemctl list-units --type=service | sed 's/^\**\s*//' | grep '^code-server@' | awk '{print $1}' | grep -v '@{{ code_server_user }}\.service$' || true
+    register: code_server_services
+    changed_when: false
+
+  - name: Disable code-server services autostart
+    systemd:
+      name: "{{ item }}"
+      enabled: no
+      force: yes
+    with_items: "{{ code_server_services.stdout_lines }}"
+
+  - name: Stop code-server services autostart
+    systemd:
+      name: "{{ item }}"
+      state: stopped
+      force: yes
+    with_items: "{{ code_server_services.stdout_lines }}"
+
+  - name: Remove code-server failed services
+    shell: "systemctl reset-failed {{ item }} || true"
+    register: reset_failed
+    with_items: "{{ code_server_services.stdout_lines }}"
+    changed_when: reset_failed.stdout != ''
+
+  - name: Enable code-server services autostart
+    systemd:
+      name: "code-server@{{ code_server_user }}.service"
+      enabled: yes
+
+  - name: Start code-server service
+    systemd:
+      name: "code-server@{{ code_server_user }}.service"
+      state: started
+    register: start_codeserver_services
+
+  - name: Restart code-server service
+    systemd:
+      name: "code-server@{{ code_server_user }}.service"
+      state: restarted
+    when:
+      - (restart_all_services | default(false) | bool) == true
+      - start_codeserver_services.changed == false

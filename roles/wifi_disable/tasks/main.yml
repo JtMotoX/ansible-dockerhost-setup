@@ -1,0 +1,10 @@
+---
+  - name: Disable wpa_supplicant service autostart
+    systemd:
+      name: wpa_supplicant
+      enabled: no
+
+  - name: Stop wpa_supplicant service
+    systemd:
+      name: wpa_supplicant
+      state: stopped

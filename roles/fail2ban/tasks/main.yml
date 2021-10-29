@@ -1,0 +1,33 @@
+---
+  - name: Install fail2ban
+    package:
+      name: fail2ban
+      state: present
+
+  - name: Check if firewalld config exists
+    stat:
+      path: "/etc/fail2ban/jail.d/00-firewalld.conf"
+    register: fail2ban_file_check
+
+  - name: Disable the firewalld config
+    shell: mv /etc/fail2ban/jail.d/00-firewalld.conf /etc/fail2ban/jail.d/00-firewalld.conf.disabled
+    when: fail2ban_file_check.stat.exists == true
+
+  - name: Enable fail2ban services autostart
+    systemd:
+      name: fail2ban
+      enabled: yes
+
+  - name: Start fail2ban services
+    systemd:
+      name: fail2ban
+      state: started
+    register: start_fail2ban_services
+
+  - name: Restart fail2ban services
+    systemd:
+      name: fail2ban
+      state: restarted
+    when:
+      - (restart_all_services | default(false) | bool) == true
+      - start_fail2ban_services.changed == false

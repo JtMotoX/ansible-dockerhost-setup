@@ -1,0 +1,6 @@
+---
+  - name: Loop over each volume
+    include: setup_volume.yml
+    with_items: "{{ volume_list }}"
+    loop_control:
+      loop_var: volume

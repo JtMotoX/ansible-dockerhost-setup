@@ -1,0 +1,16 @@
+---
+  - name: Disable default motd sections
+    file:
+      dest: /etc/update-motd.d/{{ item }}
+      mode: -x
+    with_items:
+      - 00-header
+      - 10-help-text
+      - 50-landscape-sysinfo
+      - 50-motd-news
+    ignore_errors: true
+
+  - name: Add our custom motd
+    lineinfile:
+      path: /etc/profile
+      line: '/docker/host/motd/dymotd'

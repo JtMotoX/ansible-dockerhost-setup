@@ -1,0 +1,121 @@
+---
+  - name: Install Docker prerequisite packages
+    package:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+
+  - name: Add Docker's official GPG key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      keyring: /usr/share/keyrings/docker-archive-keyring.gpg
+      state: present
+
+  - name: lsb_release -cs
+    shell: lsb_release -cs
+    register: lsb_release_cs
+    changed_when: false
+
+  - name: Set up the stable repository
+    copy:
+      content: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu   {{ lsb_release_cs.stdout }} stable"
+      dest: "/etc/apt/sources.list.d/docker.list"
+    register: docker_stable_repository
+
+  - name: Update Apt cache
+    apt:
+      update_cache: yes
+    when: docker_stable_repository.changed
+    changed_when: false
+
+  - name: Install Docker Engine
+    package:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+
+  - name: Create docker group
+    group:
+      name: docker
+      state: present
+
+  - name: Add user to docker group
+    user:
+      name: "{{ ansible_user }}"
+      groups: docker
+      append: yes
+
+  - name: Enable Docker services autostart
+    systemd:
+      name: "{{ item }}"
+      enabled: yes
+    with_items:
+      - docker
+      - containerd
+
+  - name: Start Docker services
+    systemd:
+      name: "{{ item }}"
+      state: started
+    with_items:
+      - docker
+      - containerd
+    register: start_docker_services
+
+  - name: Restart Docker services
+    systemd:
+      name: "{{ item }}"
+      state: restarted
+    with_items:
+      - docker
+      - containerd
+    when:
+      - (restart_all_services | default(false) | bool) == true
+      - start_docker_services.changed == false
+
+  - name: Get Docker version
+    shell: docker --version
+    register: docker_version
+    changed_when: false
+
+  - debug:
+      var: docker_version.stdout
+    run_once: true
+
+  - name: Get uname -s
+    shell: uname -s
+    register: uname_s
+    changed_when: false
+
+  - name: Get uname -m
+    shell: uname -m
+    register: uname_m
+    changed_when: false
+
+  - name: Download docker-compose
+    get_url:
+      url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-{{ uname_s.stdout }}-{{ uname_m.stdout }}"
+      dest: /usr/local/bin/docker-compose
+      mode: '0755'
+
+  - name: Create a symbolic link for docker-compose
+    file:
+      src: /usr/local/bin/docker-compose
+      dest: /usr/bin/docker-compose
+      state: link
+
+  - name: Get docker-compose version
+    shell: docker-compose --version
+    register: docker_compose_version
+    changed_when: false
+
+  - debug:
+      var: docker_compose_version.stdout
+    run_once: true

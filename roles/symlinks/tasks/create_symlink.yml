@@ -1,0 +1,42 @@
+---
+  - name: Display symlink details
+    debug:
+      msg: "{{ symlink.file }} (file) -> {{ symlink.link }} (link)"
+
+  - name: Get stats of a file
+    stat:
+      path: "{{ symlink.link }}"
+    register: symlink_link_stat
+
+  - set_fact:
+      symlink_exists: false
+
+  - name: Determine if the symlink already exists
+    set_fact:
+      symlink_exists: true
+    when:
+      - (symlink_link_stat.stat.islnk | default(false)) == true
+      - (
+          (symlink_link_stat.stat.lnk_source | default('')) == symlink.file
+        ) or (
+          (symlink_link_stat.stat.lnk_target | default('')) == symlink.file
+        )
+
+  - name: Set a flag to restart all services since a symlink was created
+    set_fact:
+      restart_all_services: true
+    when: not symlink_exists
+
+  - name: Remove existing if exists before creating symlink
+    file:
+      path: "{{ symlink.link }}"
+      state: absent
+    when: not symlink_exists
+
+  - name: Create a symbolic link
+    file:
+      src: "{{ symlink.file }}"
+      dest: "{{ symlink.link }}"
+      state: link
+      force: yes
+    when: not symlink_exists

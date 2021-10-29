@@ -1,0 +1,24 @@
+---
+  - name: Playbook to setup my servers
+    gather_facts: true
+    hosts: all
+    become: yes
+    pre_tasks:
+      - name: Update Apt cache before running playbook
+        apt:
+          update_cache: yes
+        changed_when: false
+    roles:
+      - { role: ntp }
+      - { role: ssd_trim }
+      - { role: wifi_disable }
+      - { role: firewall_disable }
+      - { role: volumes }
+      - { role: symlinks }
+      - { role: git }
+      - { role: code-server }
+      - { role: docker }
+      - { role: fail2ban }
+      - { role: ssh }
+      - { role: cron }
+      - { role: motd }

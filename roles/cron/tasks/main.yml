@@ -1,0 +1,18 @@
+---
+  - name: Enable cron logging
+    replace:
+      path: /etc/rsyslog.d/50-default.conf
+      regexp: '^#(cron\..*)$'
+      replace: '\1'
+    register: enable_cron_logging
+
+  - name: Restart rsyslog service
+    systemd:
+      name: rsyslog
+      state: restarted
+    when: enable_cron_logging.changed == true
+
+  - name: Apply cron configs
+    shell: /docker/host/cron/apply_cron.sh
+    register: apply_cron
+    changed_when: ('Changes applied' in apply_cron.stdout)

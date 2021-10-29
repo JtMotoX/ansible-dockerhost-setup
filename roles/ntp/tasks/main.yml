@@ -1,0 +1,19 @@
+---
+  - name: Set timezone
+    timezone:
+      name: America/Los_Angeles
+
+  - name: Install ntp
+    package:
+      name: ntp
+      state: present
+
+  - name: Enable ntp service autostart
+    systemd:
+      name: ntp
+      enabled: yes
+
+  - name: Start ntp service
+    systemd:
+      name: ntp
+      state: started

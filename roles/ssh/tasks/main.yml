@@ -1,0 +1,5 @@
+---
+  - name: Apply ssh configs
+    shell: /docker/host/ssh/apply.sh
+    register: apply_ssh
+    changed_when: apply_ssh.stdout != ''

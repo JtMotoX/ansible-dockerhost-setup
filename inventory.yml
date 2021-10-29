@@ -1,0 +1,30 @@
+dockerhosts:
+  hosts:
+    dockerhost01-fd:
+      ansible_host: 192.168.168.11
+      ansible_user: docker
+      ansible_sudo_pass: !vault |
+        $ANSIBLE_VAULT;1.1;AES256
+        32386136386336656638316137656564323834383430396435303962313762313937333661393038
+        3436346234333630346133616132373135356237626533380a643732373066376638623734356161
+        63353738323730643439396131653664346137613833326266316334386532623737666639373730
+        3662643937656431320a356639656364356238666633346132366131383430396665323662633735
+        6639
+      volume_list:
+        - partition: sda1
+          src: /docker
+          dest: /docker
+        - partition: sda1
+          src: /docker_dev
+          dest: /docker_dev
+      symlink_list:
+        - file: /docker/host/bash_profile
+          link: /root/.bash_profile
+        - file: /docker/host/fail2ban/jail.local
+          link: /etc/fail2ban/jail.local
+        - file: /docker/host/sshrc.sh
+          link: /etc/ssh/sshrcroot
+        - file: /docker/host/code-server/config.yaml
+          link: /root/.config/code-server/config.yaml
+        - file: /docker/host/docker-compose-wrapper/dcomp.sh
+          link: /usr/local/bin/dcomp
